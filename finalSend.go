@@ -36,9 +36,20 @@ func blink(led string) {
         time.Sleep(1000 * time.Millisecond)
         setLed(led, []byte("0"))
 }
+func send_timestamp()( send_msg string) {
+    t := time.Now()
+    sst := (t.Format(time.StampMicro))
+
+    send_msg = fmt.Sprintf("%02d:%s:%02d:%02d:%02d:%02d:%06d\n",
+              t.Day(), strings.ToUpper(sst[0:3]) , t.Year(),
+               t.Hour(), t.Minute(), t.Second(), t.Nanosecond()/1000 )
+    return send_msg 
+}
 
 
-func sync( round int ) ( d int ) {
+
+
+func sync( round int ) (  float64 ) {
 
     c := &serial.Config{Name: "/dev/ttyUSB0", Baud: 9600,  ReadTimeout: time.Second*3}
     s, err := serial.OpenPort(c)
@@ -49,7 +60,6 @@ func sync( round int ) ( d int ) {
         fmt.Println("after flush")
     }
 
-    i := 1
     d:=0.0
     counter := 0 
 
@@ -57,22 +67,15 @@ func sync( round int ) ( d int ) {
     t_set := 5
 
     fmt.Printf("Start system's characeterization\n",d);
-    for true {
+    for ii :=1 ; ii<= round;ii++ {
 	
-	if delay_cnt == 10 { 
-	     d = (delay_sum / float64(delay_cnt)/1000000 - float64(t_set)) 
-             fmt.Printf("average delay is %f", d);
-             fmt.Printf("\nFinish characeterization\n");
-	}
+	d = (delay_sum / float64(delay_cnt)/1000000 - float64(t_set)) 
+        fmt.Printf("average delay is %f", d);
+        fmt.Printf("\nFinish characeterization\n");
 
 	counter++
 
-        t := time.Now()
-        sst := (t.Format(time.StampMicro))
-
-        send_msg := fmt.Sprintf("%02d:%s:%02d:%02d:%02d:%02d:%06d\n",
-              t.Day(), strings.ToUpper(sst[0:3]) , t.Year(),
-              t.Hour(), t.Minute(), t.Second(), t.Nanosecond()/1000 )
+	send_msg := send_timestamp() 
 
         fmt.Printf("%s\n", send_msg)
 
@@ -81,33 +84,35 @@ func sync( round int ) ( d int ) {
 		fmt.Println(err)
 	}
 
-       ttt = time.Second * 1 +  time.Duration(200)*time.Millisecond
-       fmt.Println("wait time: ",ttt)
-       time.Sleep( ttt )
-       fmt.Println("Flash")
-       blink("/sys/class/leds/beaglebone:green:usr1")
+
+
+
+fmt.Println("Flash")
+ttt = time.Second * 1 +  time.Duration(200)*time.Millisecond
+time.Sleep( ttt )
+fmt.Println("wait time: ",ttt)
+blink("/sys/class/leds/beaglebone:green:usr1")
 
        buffer := make([]byte, 1280)
-       cnt , er := s.Read(buffer)
-
+       _ , er := s.Read(buffer)
        fmt.Printf("%s", string(buffer)) 
        if er != nil {
 	     fmt.Println(er) 
        }
 
-       i += cnt 
-       fmt.Printf("cnt = ",cnt)
    }
 
     err = s.Close()
     if err != nil {
        fmt.Println(err) 
     }
+    return d
 }
 
 func main(){
-    delay_avg := sync() 
-    fmt.Println(d) 
+    round :=10
+    delay_avg := sync(round) 
+    fmt.Println(delay_avg) 
 }
 
 
