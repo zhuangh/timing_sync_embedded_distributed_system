@@ -20,6 +20,7 @@ var delay_avg float64 = 0
 //var delay_cnt float64 = 0 
 var delay_cnt int = 0 
 
+var timeout_val = time.Second * 10  
 var WAIT_TIME float64 =  5*1000000.0
 
 
@@ -55,7 +56,7 @@ func parse_timestamp( buf string)(tt float64) {
 	m , _ := strconv.ParseFloat((buf[15:17]),64)
 	s , _ := strconv.ParseFloat((buf[18:20]),64)
 	ms , _ := strconv.ParseFloat((buf[21:27]),64)
-	fmt.Println(h,m,s,ms) 
+//	fmt.Println(h,m,s,ms) 
 	tt =  ((((60*h+m))*60 ) + s ) * 1000000   + ms 
 	return tt 
 }
@@ -81,19 +82,18 @@ func time_diff_now( buf string ) (tdiff float64) {
 
 func SendAndFlash(delay float64) {
 
-    c := &serial.Config{Name: "/dev/ttyUSB0", Baud: 9600}
+    c := &serial.Config{Name: "/dev/ttyUSB0", Baud: 9600, ReadTimeout: timeout_val}
     s, err := serial.OpenPort(c)
 
     for true{
 
 	send_msg := timestamp() 
 
-        _, err = s.Write([]byte(send_msg))
-//	go s.Write([]byte(send_msg))
+        go  s.Write([]byte(send_msg))
+//        go s.Write([]byte("                     "))
+ //       go s.Write([]byte("                     "))
+	
         fmt.Printf("%s\n", send_msg)
-	if err != nil {
-		fmt.Println(err)
-	}
        sleeping_func( delay) 
        go blink("/sys/class/leds/beaglebone:green:usr1")
        sleeping_func( WAIT_TIME ) 
@@ -110,8 +110,7 @@ func SendAndFlash(delay float64) {
 
 func sync( round int ) (  float64 ) {
 
-    timeout_val := time.Second*10
-    TIME_OUT := 2000000.0 
+    TIME_OUT := 1000000.0 
     c := &serial.Config{Name: "/dev/ttyUSB0", Baud: 9600,  ReadTimeout: timeout_val}
     s, err := serial.OpenPort(c)
 
@@ -135,7 +134,9 @@ func sync( round int ) (  float64 ) {
 	send_msg := timestamp() 
         fmt.Printf("%s\n", send_msg)
 
-        _, err = s.Write([]byte(send_msg))
+        go s.Write([]byte(send_msg))
+//        go s.Write([]byte("                     "))
+ //       go s.Write([]byte("                     "))
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -145,10 +146,10 @@ func sync( round int ) (  float64 ) {
 	for Tag {
 	    Tag = false
 
-            buffer := make([]byte, 1280)
+            buffer := make([]byte, 100000)
             cnt , err := s.Read(buffer)
-	    fmt.Println(string(buffer))
-	    fmt.Println((cnt))
+//	    fmt.Println(string(buffer))
+//	    fmt.Println((cnt))
 	    cur_pt := 0 
 	    if err != nil {
 		fmt.Println(err) 
@@ -201,7 +202,7 @@ func main(){
    round :=10
    delay_avg := sync(round) 
 //    delay_avg := 300000.0
-    fmt.Println(delay_avg) 
+    fmt.Println(delay_avg / 2.0) 
     SendAndFlash(delay_avg/2.0) 
 
 }

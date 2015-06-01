@@ -35,7 +35,7 @@ func sleeping_func( t float64  ){
 
 func main() {
 //    blink("/sys/class/leds/beaglebone:green:usr1")
-    c := &serial.Config{Name: "/dev/ttyUSB0", Baud: 9600} // , ReadTimeout: time.Microsecond*2000000}
+    c := &serial.Config{Name: "/dev/ttyUSB0", Baud: 9600 , ReadTimeout: time.Microsecond*10000000}
     s, err := serial.OpenPort(c)
     if err != nil {
        fmt.Println(err) 
@@ -47,9 +47,11 @@ func main() {
 
     for true {
 
-       buffer := make([]byte, 1280)
+       buffer := make([]byte, 100000)
        cnt , er := s.Read(buffer)
+
        fmt.Printf("%s", string(buffer)) 
+
        if er != nil {
 	     fmt.Println(er) 
        }
@@ -58,13 +60,12 @@ func main() {
             if buffer[k] == '\n' {
 		send_messageAB := "ack\n"
 		fmt.Printf("\nsend to A with B: %s ",  send_messageAB) 
-		go  s.Write([]byte( send_messageAB ))
-		go  blink("/sys/class/leds/beaglebone:green:usr1")
+		go s.Write([]byte( send_messageAB ))
+		go blink("/sys/class/leds/beaglebone:green:usr1")
                 fmt.Printf("\nFlash@@") 
                 fmt.Printf("================================================\n") 
-//		 sleeping_func(2*1000000.0) 
 		 break 
-	    }
+	    } 
         }
     }
     
