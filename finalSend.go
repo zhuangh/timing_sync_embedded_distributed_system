@@ -20,6 +20,8 @@ var delay_avg float64 = 0
 //var delay_cnt float64 = 0 
 var delay_cnt int = 0 
 
+var WAIT_TIME float64 =  5*1000000.0
+
 
 
 func setLed(led string, value []byte) {
@@ -41,7 +43,7 @@ func timestamp()( send_msg string) {
     t := time.Now()
     sst := (t.Format(time.StampMicro))
 
-    send_msg = fmt.Sprintf("%02d:%s:%02d:%02d:%02d:%02d:%06d\n\n\n",
+    send_msg = fmt.Sprintf("%02d:%s:%02d:%02d:%02d:%02d:%06d\n",
               t.Day(), strings.ToUpper(sst[0:3]) , t.Year(),
                t.Hour(), t.Minute(), t.Second(), t.Nanosecond()/1000 )
     return send_msg 
@@ -85,14 +87,16 @@ func SendAndFlash(delay float64) {
     for true{
 
 	send_msg := timestamp() 
-        fmt.Printf("%s\n", send_msg)
+
         _, err = s.Write([]byte(send_msg))
+//	go s.Write([]byte(send_msg))
+        fmt.Printf("%s\n", send_msg)
 	if err != nil {
 		fmt.Println(err)
 	}
        sleeping_func( delay) 
-       blink("/sys/class/leds/beaglebone:green:usr1")
-       sleeping_func( 2*1000000.0 ) 
+       go blink("/sys/class/leds/beaglebone:green:usr1")
+       sleeping_func( WAIT_TIME ) 
     }
 
     err = s.Close()
@@ -106,9 +110,9 @@ func SendAndFlash(delay float64) {
 
 func sync( round int ) (  float64 ) {
 
-//    timeout_val := time.Second*2
+    timeout_val := time.Second*10
     TIME_OUT := 2000000.0 
-    c := &serial.Config{Name: "/dev/ttyUSB0", Baud: 9600}//  ReadTimeout: timeout_val}
+    c := &serial.Config{Name: "/dev/ttyUSB0", Baud: 9600,  ReadTimeout: timeout_val}
     s, err := serial.OpenPort(c)
 
     if err != nil {
@@ -122,6 +126,7 @@ func sync( round int ) (  float64 ) {
     delay_cnt:=0
 
     fmt.Printf("Start system's sync\n")
+
 
     for ii :=1 ; ii<= round;ii++ {
 	fmt.Println("iter: ", ii)
@@ -179,7 +184,8 @@ func sync( round int ) (  float64 ) {
        } // for Tag
 
     
-    sleeping_func(2*1000000.0)
+    //sleeping_func(2*1000000.0)
+    sleeping_func(WAIT_TIME ) 
 
     } // sync times 
 
@@ -192,10 +198,12 @@ func sync( round int ) (  float64 ) {
 }
 
 func main(){
-    round :=10
-    delay_avg := sync(round) 
+   round :=10
+   delay_avg := sync(round) 
+//    delay_avg := 300000.0
     fmt.Println(delay_avg) 
-    SendAndFlash(delay_avg) 
+    SendAndFlash(delay_avg/2.0) 
+
 }
 
 

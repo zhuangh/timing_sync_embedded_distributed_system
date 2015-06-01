@@ -24,6 +24,15 @@ func blink(led string) {
 	setLed(led, []byte("0"))
 }
 
+func sleeping_func( t float64  ){
+    // ttt := time.Second * 1 +  time.Duration(200)*time.Millisecond
+    ttt :=   time.Duration(t)*time.Microsecond
+    time.Sleep( ttt )
+//    fmt.Println("wait time: ",ttt)
+}
+
+
+
 func main() {
 //    blink("/sys/class/leds/beaglebone:green:usr1")
     c := &serial.Config{Name: "/dev/ttyUSB0", Baud: 9600} // , ReadTimeout: time.Microsecond*2000000}
@@ -33,32 +42,34 @@ func main() {
     } else{
         fmt.Println("after flush")
     }
-    i := 1
+
+
+
     for true {
+
        buffer := make([]byte, 1280)
        cnt , er := s.Read(buffer)
        fmt.Printf("%s", string(buffer)) 
        if er != nil {
 	     fmt.Println(er) 
        }
-       i += cnt 
 
        for k:=0; k < cnt ; k++{
             if buffer[k] == '\n' {
-		send_messageAB := "ack\n\n\n"
+		send_messageAB := "ack\n"
 		fmt.Printf("\nsend to A with B: %s ",  send_messageAB) 
-		 _, err = s.Write([]byte( send_messageAB ))
-		 blink("/sys/class/leds/beaglebone:green:usr1")
-                 fmt.Printf("\nFlash@@\n") 
-                 fmt.Printf("\n================================================\n") 
-//		 fmt.Println("reset buffer")
+		go  s.Write([]byte( send_messageAB ))
+		go  blink("/sys/class/leds/beaglebone:green:usr1")
+                fmt.Printf("\nFlash@@") 
+                fmt.Printf("================================================\n") 
+//		 sleeping_func(2*1000000.0) 
 		 break 
 	    }
         }
     }
     
 
-    fmt.Printf("\nReceive %d bytes\n", i) 
+//    fmt.Printf("\nReceive %d bytes\n", i) 
 
     if err != nil {
        fmt.Println(err) 
@@ -85,3 +96,4 @@ func main() {
 		fmt.Printf("\nsend to A with B: %s ",  send_messageAB) 
 		 _, err = s.Write([]byte( send_messageAB ))
 */
+
