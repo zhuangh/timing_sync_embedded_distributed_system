@@ -60,8 +60,7 @@ func main() {
        buffer := make([]byte, 100000)
        cnt , er := s.Read(buffer)
 
-       fmt.Println("cnt: ", cnt) 
-
+       fmt.Printf("\nword length : %d", cnt) 
        fmt.Printf("%s", string(buffer)) 
 
        if er != nil {
@@ -83,11 +82,11 @@ func main() {
        for k:=0; k < cnt ; k++{
             if buffer[k] == '\n' {
 		send_messageAB := "123456789012345678901234567\n\n\n"
-		fmt.Printf("\nsend to A with B: %s ",  send_messageAB) 
+//		fmt.Printf("\nsend to A with B: %s ",  send_messageAB) 
 		sleeping_func(WAIT_TIME_RECV) 
                 s.Write([]byte( send_messageAB ))
                 go blink("/sys/class/leds/beaglebone:green:usr1")
-		fmt.Printf("\nFlash@@") 
+		fmt.Printf("Flash@@") 
 		fmt.Printf("================================================\n") 
 		break 
 	    } 
