@@ -2,12 +2,19 @@ package main
 
 import (
     "fmt"
-    "./serial"
+    //"./serial"
+    "./serial_sean"
     "time" 
     //"strings"
     "os"
     "log"
 )
+
+var WAIT_TIME_RECV float64 =  2*1000000.0
+
+
+
+// var RECV_LOW_BOUND int = 27  
 
 func setLed(led string, value []byte) {
 	file, err := os.OpenFile(led+"/brightness", os.O_WRONLY, 0666)
@@ -35,8 +42,11 @@ func sleeping_func( t float64  ){
 
 func main() {
 //    blink("/sys/class/leds/beaglebone:green:usr1")
-    c := &serial.Config{Name: "/dev/ttyUSB0", Baud: 9600 , ReadTimeout: time.Microsecond*10000000}
-    s, err := serial.OpenPort(c)
+    // c := &serial.Config{Name: "/dev/ttyUSB0", Baud: 9600 , ReadTimeout: time.Microsecond*10000000}
+//    c := openPort{Name: "/dev/ttyUSB0", Baud: 9600 , ReadTimeout: time.Microsecond*10000000}
+    c := "/dev/ttyUSB0" 
+    // s, err := serial.OpenPort(c)
+    s, err := serial_sean.OpenPort(c)
     if err != nil {
        fmt.Println(err) 
     } else{
@@ -50,23 +60,39 @@ func main() {
        buffer := make([]byte, 100000)
        cnt , er := s.Read(buffer)
 
+       fmt.Println("cnt: ", cnt) 
+
        fmt.Printf("%s", string(buffer)) 
 
        if er != nil {
 	     fmt.Println(er) 
        }
 
+      /*
+       if cnt >= RECV_LOW_BOUND {
+		send_messageAB := "123456789012345678901234567\n"
+		fmt.Printf("\nsend to A with B: %s ",  send_messageAB) 
+		sleeping_func(WAIT_TIME_RECV) 
+                s.Write([]byte( send_messageAB ))
+                go blink("/sys/class/leds/beaglebone:green:usr1")
+		fmt.Printf("\nFlash@@") 
+		fmt.Printf("================================================\n") 
+      } 
+      */
+
        for k:=0; k < cnt ; k++{
             if buffer[k] == '\n' {
-		send_messageAB := "ack\n"
+		send_messageAB := "123456789012345678901234567\n\n\n"
 		fmt.Printf("\nsend to A with B: %s ",  send_messageAB) 
-		go s.Write([]byte( send_messageAB ))
-		go blink("/sys/class/leds/beaglebone:green:usr1")
-                fmt.Printf("\nFlash@@") 
-                fmt.Printf("================================================\n") 
-		 break 
+		sleeping_func(WAIT_TIME_RECV) 
+                s.Write([]byte( send_messageAB ))
+                go blink("/sys/class/leds/beaglebone:green:usr1")
+		fmt.Printf("\nFlash@@") 
+		fmt.Printf("================================================\n") 
+		break 
 	    } 
         }
+
     }
     
 

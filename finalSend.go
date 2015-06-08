@@ -3,7 +3,8 @@ package main
 
 import (
     "fmt"
-    "./serial"
+    //"./serial"
+    "./serial_sean"
     "time" 
     "strconv"
     "strings"
@@ -22,8 +23,11 @@ var delay_cnt int = 0
 
 var timeout_val = time.Second * 10  
 var WAIT_TIME float64 =  5*1000000.0
+var WAIT_TIME_RECV float64 =  2*1000000.0
 
-
+var XBEE_RESOLUTION float64 = 90000.0 // 90 milli second 
+var TIME_OUT float64 = 10*1000000.0 
+// var RECV_LOW_BOUND int = 27  
 
 func setLed(led string, value []byte) {
         file, err := os.OpenFile(led+"/brightness", os.O_WRONLY, 0666)
@@ -47,6 +51,8 @@ func timestamp()( send_msg string) {
     send_msg = fmt.Sprintf("%02d:%s:%02d:%02d:%02d:%02d:%06d\n",
               t.Day(), strings.ToUpper(sst[0:3]) , t.Year(),
                t.Hour(), t.Minute(), t.Second(), t.Nanosecond()/1000 )
+//    send_msg += send_msg 
+//    send_msg += send_msg 
     return send_msg 
 }
 
@@ -82,20 +88,18 @@ func time_diff_now( buf string ) (tdiff float64) {
 
 func SendAndFlash(delay float64) {
 
-    c := &serial.Config{Name: "/dev/ttyUSB0", Baud: 9600, ReadTimeout: timeout_val}
-    s, err := serial.OpenPort(c)
+    //c := &serial.Config{Name: "/dev/ttyUSB0", Baud: 9600, ReadTimeout: timeout_val}
+//    s, err := serial.OpenPort(c)
+    c := "/dev/ttyUSB0" 
+    s, err := serial_sean.OpenPort(c)
 
     for true{
-
-	send_msg := timestamp() 
-
-        go  s.Write([]byte(send_msg))
-//        go s.Write([]byte("                     "))
- //       go s.Write([]byte("                     "))
-	
-        fmt.Printf("%s\n", send_msg)
+       send_msg := timestamp() 
+       s.Write([]byte(send_msg))
+       fmt.Printf("%s\n", send_msg)
        sleeping_func( delay) 
        go blink("/sys/class/leds/beaglebone:green:usr1")
+       fmt.Println("@@FLASH ========")
        sleeping_func( WAIT_TIME ) 
     }
 
@@ -110,9 +114,11 @@ func SendAndFlash(delay float64) {
 
 func sync( round int ) (  float64 ) {
 
-    TIME_OUT := 1000000.0 
-    c := &serial.Config{Name: "/dev/ttyUSB0", Baud: 9600,  ReadTimeout: timeout_val}
-    s, err := serial.OpenPort(c)
+
+    // c := &serial.Config{Name: "/dev/ttyUSB0", Baud: 9600,  ReadTimeout: timeout_val}
+    // s, err := serial.OpenPort(c)
+    c := "/dev/ttyUSB0" 
+    s, err := serial_sean.OpenPort(c)
 
     if err != nil {
        fmt.Println(err) 
@@ -128,19 +134,18 @@ func sync( round int ) (  float64 ) {
 
 
     for ii :=1 ; ii<= round;ii++ {
-	fmt.Println("iter: ", ii)
+
+	fmt.Println("\n---- Testing @iter = ", ii)
 	
 	counter++
 	send_msg := timestamp() 
         fmt.Printf("%s\n", send_msg)
 
-        go s.Write([]byte(send_msg))
-//        go s.Write([]byte("                     "))
- //       go s.Write([]byte("                     "))
-	if err != nil {
-		fmt.Println(err)
-	}
+        s.Write([]byte(send_msg))
 
+	if err != nil {
+            fmt.Println(err)
+	}
 
 	Tag := true
 	for Tag {
@@ -148,24 +153,54 @@ func sync( round int ) (  float64 ) {
 
             buffer := make([]byte, 100000)
             cnt , err := s.Read(buffer)
-//	    fmt.Println(string(buffer))
-//	    fmt.Println((cnt))
 	    cur_pt := 0 
 	    if err != nil {
 		fmt.Println(err) 
 	    }
 
 
-	    for k:=0 ; k < cnt; k++{
-	       if  buffer[k] == '\n'{
-		    tdiff := time_diff_now( send_msg) 
 
-		    if tdiff > TIME_OUT{
+	    fmt.Println("cnt: ", cnt) 
+
+/*
+	    if cnt >= RECV_LOW_BOUND {
+		    tdiff := time_diff_now( send_msg ) -  WAIT_TIME_RECV 
+
+		    if tdiff > TIME_OUT || tdiff<0 {
 			Tag = false
 			break 
 		    }else{ 
 			delay_sum += tdiff
 			delay_cnt += 1
+			if max_delay < tdiff{ 
+			    max_delay = tdiff 
+			}
+			if min_delay > tdiff{
+			    min_delay = tdiff 
+			}
+		       Tag = false
+		       break
+		    }
+       	    } 
+
+
+*/
+
+	    for k:=0 ; k < cnt; k++{
+	       if  buffer[k] == '\n'{
+		    tdiff := time_diff_now( send_msg ) -  WAIT_TIME_RECV 
+		    fmt.Println(" currnt delay = ", tdiff) 
+		    fmt.Println(" delay cnt = ", delay_cnt) 
+
+		    if tdiff > TIME_OUT || tdiff < XBEE_RESOLUTION {
+			Tag = false
+			break 
+		    }else{ 
+			delay_sum += tdiff
+			delay_cnt += 1
+
+			fmt.Println(" current delay sum = ", delay_sum) 
+			fmt.Println(" current delay cnt = ", delay_cnt) 
 	
 			if max_delay < tdiff{ 
 			    max_delay = tdiff 
@@ -178,34 +213,38 @@ func sync( round int ) (  float64 ) {
 		       break
 		    }
                }else{
+		    fmt.Printf("%c",buffer[k]) 
 		    cur_pt++
 		    Tag = true 
                }
 	 } // for k
+	fmt.Println();
        } // for Tag
 
     
-    //sleeping_func(2*1000000.0)
     sleeping_func(WAIT_TIME ) 
 
     } // sync times 
+
+    d = delay_sum/(float64(delay_cnt))
 
     err = s.Close()
     if err != nil {
        fmt.Println(err) 
     }
-    d = delay_sum/(float64(delay_cnt))
+
+
     return d
 }
 
 func main(){
-   round :=10
+   round := 5 
    delay_avg := sync(round) 
 //    delay_avg := 300000.0
-    fmt.Println(delay_avg / 2.0) 
-    SendAndFlash(delay_avg/2.0) 
-
+    fmt.Println("RTT+overhead: ", delay_avg ) 
+    SendAndFlash(delay_avg + WAIT_TIME_RECV) 
 }
+
 
 
 
