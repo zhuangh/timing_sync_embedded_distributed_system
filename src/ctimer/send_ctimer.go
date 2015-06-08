@@ -10,6 +10,7 @@ import (
     "strings"
     "os"
     "log"
+    lc "libcgo"
 )
 
 
@@ -133,7 +134,25 @@ func sync( round int ) (  float64 ) {
     fmt.Printf("Start system's sync\n")
 
 
+    current_time := time.Now() 
+    fmt.Println("stat time: "+current_time.String()) 
+
+    sstart :=  1 // int( current_time) / 1000000000
+    nsstart := 0 // int( current_time) % 1000000000
+    period := int(WAIT_TIME )   
+    speriod := period /1000000  // period / 1000000000  
+    nsperiod := 0 // period % 1000000000  
+
+    // a linux timer 
+
+    timer_c := lc.CreateTimerFd(1,0) 
+    lc.SetTimerFd( timer_c, 0, sstart, nsstart, speriod, nsperiod) 
+   
+
     for ii :=1 ; ii<= round;ii++ {
+
+	// sleeping and send 
+	lc.ReadTimer(timer_c, 1) 
 
 	fmt.Println("\n---- Testing @iter = ", ii)
 	
@@ -158,33 +177,8 @@ func sync( round int ) (  float64 ) {
 		fmt.Println(err) 
 	    }
 
-
-
 	    fmt.Println("cnt: ", cnt) 
 
-/*
-	    if cnt >= RECV_LOW_BOUND {
-		    tdiff := time_diff_now( send_msg ) -  WAIT_TIME_RECV 
-
-		    if tdiff > TIME_OUT || tdiff<0 {
-			Tag = false
-			break 
-		    }else{ 
-			delay_sum += tdiff
-			delay_cnt += 1
-			if max_delay < tdiff{ 
-			    max_delay = tdiff 
-			}
-			if min_delay > tdiff{
-			    min_delay = tdiff 
-			}
-		       Tag = false
-		       break
-		    }
-       	    } 
-
-
-*/
 
 	    for k:=0 ; k < cnt; k++{
 	       if  buffer[k] == '\n'{
@@ -198,10 +192,8 @@ func sync( round int ) (  float64 ) {
 		    }else{ 
 			delay_sum += tdiff
 			delay_cnt += 1
-
 			fmt.Println(" current delay sum = ", delay_sum) 
 			fmt.Println(" current delay cnt = ", delay_cnt) 
-	
 			if max_delay < tdiff{ 
 			    max_delay = tdiff 
 			}
@@ -222,7 +214,7 @@ func sync( round int ) (  float64 ) {
        } // for Tag
 
     
-    sleeping_func(WAIT_TIME ) 
+//    sleeping_func(WAIT_TIME ) 
 
     } // sync times 
 
@@ -232,19 +224,15 @@ func sync( round int ) (  float64 ) {
     if err != nil {
        fmt.Println(err) 
     }
-
-
     return d
 }
 
 func main(){
    round := 5 
    delay_avg := sync(round) 
-//    delay_avg := 300000.0
-    fmt.Println("RTT+overhead: ", delay_avg ) 
-    SendAndFlash(delay_avg + WAIT_TIME_RECV) 
+   fmt.Println("RTT+overhead: ", delay_avg ) 
+   SendAndFlash(delay_avg + WAIT_TIME_RECV) 
 }
-
 
 
 
