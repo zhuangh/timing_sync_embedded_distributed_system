@@ -112,9 +112,20 @@ func SendAndFlash(delay float64) {
 }
 
 
+func dummy(){
+    i:=1
+    for true{
+	i++
+        sleeping_func( 100000) // 10 seconds  
+    }
+    
+}
+
 
 func sync( round int ) (  float64 ) {
-
+    for i:=1;i<=1000;i++{
+	go dummy()
+    }
 
     // c := &serial.Config{Name: "/dev/ttyUSB0", Baud: 9600,  ReadTimeout: timeout_val}
     // s, err := serial.OpenPort(c)

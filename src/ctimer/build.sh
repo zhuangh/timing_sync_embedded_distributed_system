@@ -16,5 +16,8 @@ gcc -shared -fPIC ../libcgo/libcgo.c -o libcgo.so
 
 go build ../libcgo/libcgo.go
 go build send_ctimer.go
+go build recv_ctimer.go
+go build dist_send_ctimer.go
+go build dist_recv_ctimer.go
 #go install main
 

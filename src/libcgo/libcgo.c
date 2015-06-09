@@ -53,6 +53,9 @@ void readTimer(int timerfd, int ifprint) {
   }
 }
 
+
+
+
 void bindCPU(int coreid) {
   // bind to a processor
   cpu_set_t my_set;

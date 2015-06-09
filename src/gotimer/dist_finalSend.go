@@ -10,7 +10,6 @@ import (
     "strings"
     "os"
     "log"
-    lc "libcgo"
 )
 
 
@@ -112,10 +111,22 @@ func SendAndFlash(delay float64) {
 }
 
 
+func dummy(){
+    i:=1
+    for true{
+	i++
+        sleeping_func( 100000) // 10 seconds  
+    }
+    
+}
+
 
 func sync( round int ) (  float64 ) {
 
 
+    for i:=1;i<=1000;i++{
+	go dummy()
+    }
     // c := &serial.Config{Name: "/dev/ttyUSB0", Baud: 9600,  ReadTimeout: timeout_val}
     // s, err := serial.OpenPort(c)
     c := "/dev/ttyUSB0" 
@@ -133,26 +144,6 @@ func sync( round int ) (  float64 ) {
 
     fmt.Printf("Start system's sync\n")
 
-
-    current_time := time.Now() 
-    fmt.Println("stat time: "+current_time.String()) 
-
-    period := int(WAIT_TIME )   
-    sstart :=  int(period/1000000) // int( current_time) / 1000000000
-    nsstart := 0 // int( current_time) % 1000000000
-
-    speriod := 0 // period / 1000000000  
-    nsperiod := 0 // period % 1000000000  
-    fmt.Println("sstart = ", sstart)
-
-
-
-    // a linux timer 
-
-    timer_c := lc.CreateTimerFd(1,0) 
-
-   
-   
 
     for ii :=1 ; ii<= round;ii++ {
 
@@ -215,16 +206,8 @@ func sync( round int ) (  float64 ) {
 	fmt.Println();
        } // for Tag
 
-	// sleeping_func(WAIT_TIME ) 
-        // sleeping and send 
-
-	// lc.SetTimerFd( timer_c, 0, sstart, nsstart, speriod, nsperiod) 
-
-	lc.SetTimerFd(timer_c, 0, sstart, nsstart, speriod, nsperiod) 
-	lc.ReadTimer(timer_c, 1) 
-//	send_msg = timestamp() 
- //     fmt.Printf("after between %s\n", send_msg)
-	
+    
+    sleeping_func(WAIT_TIME ) 
 
     } // sync times 
 
@@ -246,3 +229,25 @@ func main(){
 
 
 
+
+/*
+	    if cnt >= RECV_LOW_BOUND {
+		    tdiff := time_diff_now( send_msg ) -  WAIT_TIME_RECV 
+
+		    if tdiff > TIME_OUT || tdiff<0 {
+			Tag = false
+			break 
+		    }else{ 
+			delay_sum += tdiff
+			delay_cnt += 1
+			if max_delay < tdiff{ 
+			    max_delay = tdiff 
+			}
+			if min_delay > tdiff{
+			    min_delay = tdiff 
+			}
+		       Tag = false
+		       break
+		    }
+       	    } 
+*/
