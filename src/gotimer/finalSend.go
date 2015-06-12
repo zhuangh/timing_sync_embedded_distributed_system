@@ -1,9 +1,9 @@
+// by Hao Zhuang (hao.zhuang@cs.ucsd.edu) 
 
 package main
 
 import (
     "fmt"
-    //"./serial"
     "../serial_sean"
     "time" 
     "strconv"
@@ -51,8 +51,6 @@ func timestamp()( send_msg string) {
     send_msg = fmt.Sprintf("%02d:%s:%02d:%02d:%02d:%02d:%06d\n",
               t.Day(), strings.ToUpper(sst[0:3]) , t.Year(),
                t.Hour(), t.Minute(), t.Second(), t.Nanosecond()/1000 )
-//    send_msg += send_msg 
-//    send_msg += send_msg 
     return send_msg 
 }
 
@@ -62,16 +60,13 @@ func parse_timestamp( buf string)(tt float64) {
 	m , _ := strconv.ParseFloat((buf[15:17]),64)
 	s , _ := strconv.ParseFloat((buf[18:20]),64)
 	ms , _ := strconv.ParseFloat((buf[21:27]),64)
-//	fmt.Println(h,m,s,ms) 
 	tt =  ((((60*h+m))*60 ) + s ) * 1000000   + ms 
 	return tt 
 }
 
 func sleeping_func( t float64  ){
-    // ttt := time.Second * 1 +  time.Duration(200)*time.Millisecond
     ttt :=   time.Duration(t)*time.Microsecond
     time.Sleep( ttt )
-//    fmt.Println("wait time: ",ttt)
 }
 
 
@@ -88,8 +83,6 @@ func time_diff_now( buf string ) (tdiff float64) {
 
 func SendAndFlash(delay float64) {
 
-    //c := &serial.Config{Name: "/dev/ttyUSB0", Baud: 9600, ReadTimeout: timeout_val}
-//    s, err := serial.OpenPort(c)
     c := "/dev/ttyUSB0" 
     s, err := serial_sean.OpenPort(c)
 

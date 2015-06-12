@@ -4,7 +4,9 @@ export GOPATH=$GOPATH:/home/debian/final/:/home/zhuang/Dropbox/15sp_cse237b/fina
 #export GOROOT=$GOROOT:/home/debian/final/:/home/zhuang/Dropbox/15sp_cse237b/final/ 
 export PATH=$PATH:$GOPATH
 export GOBIN=$GOBIN:/home/debian/final/bin
-export GOMAXPROCS=10
+# export GOMAXPROCS=10
+export GOMAXPROCS=1
+
 
 # dynamic link
 gcc -shared -fPIC ../libcgo/libcgo.c -o libcgo.so
